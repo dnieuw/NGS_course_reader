@@ -1,0 +1,82 @@
+# Raw Data Quality Control
+
+::: {.callout-warning}
+# Important!
+
+Again! In the next steps we are going to copy-paste code, adjust it to our needs, and execute it on the command-line. 
+
+__Please open a plain text editor to paste the code from the next steps, to keep track of your progress!__
+:::
+
+## Merging fastq files
+
+The following steps are the similar for metagenomic Nanopore data as for amplicon data.
+
+Any file in linux can be pasted to another file using the `cat` command. `zcat` in addition also unzips gzipped files (e.g. `.fastq.gz` extension). If your files are already unzipped, use `cat` instead.
+
+**Modify and run:**
+
+``` bash
+zcat {folder}/*.fastq.gz > {output}
+```
+
+- `{folder}` should contain all your `.fastq.gz` files for a single barcode.
+- `{output}` should be the name of the combined unzipped fastq file (e.g. `all_barcode01.fastq`).
+
+## Trimming metagenome adapters and random nonamer sequences
+
+By using the SISPA library preparation approach we have added sequence adapters and random nonamer sequences to our library fragments. Before we continue with our data we have to remove these adapters and nonamers by using the [cutadapt](https://cutadapt.readthedocs.io) software again.
+
+First we trim the adapter sequence "GTTTCCCACTGGAGGATA" and the reverse complement "TATCCTCCAGTGGGAAAC" at the end of the read. We allow 0.2 errors (20%) and remove up to 5 adapters if more are present (n). We also remove any reads shorter than 150 nucleotides.
+
+Next we remove 9 nucleotides from each read from the front and the end.
+
+We remove the intermediate product "tmp.fastq" with `rm`.
+
+``` bash
+cutadapt -j 18 -e 0.2 -n 5 -m 150 --revcomp -a GTTTCCCACTGGAGGATA...TATCCTCCAGTGGGAAAC {input} > tmp.fastq
+cutadapt -j 18 -u 9 -u -9 tmp.fastq > {output}
+rm tmp.fastq
+```
+
+- `{input}` is the merged file from the previous step.
+- `{output}` name you give to the adapter trimmed `.fastq` file (e.g. `all_barcode01_trimmed.fastq`).
+
+## Running fastp quality controlling software
+
+The [fastp](https://github.com/OpenGene/fastp) software can also be used to QC metagenomic reads.
+
+Because we are processing Nanopore data several quality control options have to be disabled. The only requirement we set is a minimum median phred quality score of the read of 10.
+
+``` bash
+fastp -i {input} -o {output} -j /dev/null -h {report} \
+--disable_trim_poly_g \
+--disable_adapter_trimming \
+--qualified_quality_phred 10 \
+--unqualified_percent_limit 50 \
+-w {threads}
+```
+
+- `{input}` is the adapter trimmed file from the previous step.
+- `{output}` is the the quality controlled `.fastq` filename (e.g. `all_barcode01_QC.fastq`).
+- `{report}` is the QC report filename, containing various details about the quality of the data before and after processing. 
+
+## Removing reads belonging to the host (e.g. Human DNA)
+
+It is often good to remove any host related reads from your dataset before assembly. In some cases there are many host related sequences in your data which makes the assembly step much more compute intensive and removing the host sequences speeds up analysis. It can also avoid misinterpretation of annotations, which can happen if there are mistakes in the viral reference genomes or if a conserved protein is similar to that in the human genome (e.g. Herpes proteins).
+
+To remove the human reads in this case, we map the QCed reads to the human HG38 reference genome and keep only those reads that do not map.
+
+``` bash
+minimap2 -aY -t {threads} -x map-ont {params.reference} {input} | samtools fastq -f 4 - > {output}
+```
+
+- `{reference}` is the location of the HG38 reference file.
+- `{input}` is the QC `.fastq` file from the previous step.
+- `{output}` is the filtered `.fastq` filename without human reads (e.g. `all_barcode01_nohuman.fastq`).
+
+Because we did not use any amplicon primers we do not need to trim any primers from the reads.
+
+::: {.callout-note}
+We now have our quality controlled sequence reads which we can use perform a de-novo assembly in the next chapter.
+:::

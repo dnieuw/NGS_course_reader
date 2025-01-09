@@ -1,0 +1,99 @@
+# Automating data analysis
+
+## Running the automated Nanopore amplicon analysis workflow
+
+Until now we have manually ran analysis tools by copying and pasting code step-by-step. This is a great exercise to get a in-depth understanding of how the raw data is processed and how the consensus sequence of a amplicon dataset is generated. However to analyse multiple or many samples at the same time it is cumbersome to do it in this manner.
+
+To automate the analysis we have developed a [Snakemake](https://snakemake.readthedocs.io/) workflow which runs all the steps we have manually done before in an automated way and in parallel for all samples we provide.
+
+## Preparing to run the workflow
+
+The workflow takes an input "sample_config" tabular file and based on this file it will process all samples in parallel and automatically.
+
+The tabular config file has the following structure:
+
+| UniqueID | FASTQ_path | Reference          | primers                     | Primer_reference     | Sequence_name        | gzipped | coverage | min_length |
+|----------|------------|--------------------|-----------------------------|----------------------|----------------------|---------|----------|------------|
+| BC01     | barcode01  | NC_003310.fasta    | long_amplicon_primers.fasta | NC_063383.1.fasta    | consensus_barcode01  | TRUE    | 30       | 1000       |
+| BC02     | barcode02  | NC_003310.fasta    | long_amplicon_primers.fasta | NC_063383.1.fasta    | consensus_barcode02  | TRUE    | 30       | 1000       |
+
+::: {.callout-warning}
+# Attention!
+Make sure that the first line contains the _exact headers_ as shown in the table above, you can find an example file in the course material.
+:::
+
+- `UniqueID`: This is the unique name used in the workflow to keep track of your sample while processing, please use a simple and unique name (e.g. `BC01`, etc.)
+- `FASTQ_path`: This is the folder location of all raw `.fastq.gz` file for a single sample, no need to use `cat` to paste them together.
+- `Reference`: This is the location of the reference sequence `.fasta` file used for the consensus generation.
+- `primers`: This is the location of the file containing the primer sequences.
+- `Primer_reference`: This is the location of the reference sequence `.fasta` file used for primer trimming.
+- `Sequence_name`: This is the name given to the consensus sequence at the end of the pipeline.
+- `gzipped`: Not used yet in the current version of the workflow.
+- `coverage`: This is the minimum coverage required, anything lower than 30 is not recommended, for low accuracy basecalling, higher coverage is recommended.
+- `min_length`: This is the minimum length required for the reads to be accepted. This must be below the expected size of the amplicon, for example, for the 2500nt mpox amplicon we use a threshold of 1000.
+
+After filling out the tablular file, we can create a directory (folder) for the results with the following process.
+
+First check your current directory with the `pwd` command:
+
+``` bash
+pwd
+```
+
+Change your current directory using `cd` if needed:
+
+``` bash
+cd /{folder1}/{folder2}
+```
+
+Then create the new directory using the `mkdir` command:
+
+``` bash
+mkdir results
+```
+
+This creates a new directory at the current location. Move the `sample_config.tsv` file to the results directory using the `mv` (move) command:
+
+``` bash
+mv sample_config.tsv results
+```
+
+::: {.callout-tip}
+If you get a "file not found" error after changing your directory (`cd`) you may need to write the complete path of your sample_config.tsv file e.g `mv /home/david/Documents/sample_config.tsv results`
+:::
+
+After preparing the results directory we have to make sure that we have activated the `viroscience_env` conda environment and check if the command line has `(viroscience_env)` in front.
+
+Next, run the `ls` command to list the files in the current directory and check if the `amplicon_workflow.smk` file is present. This is the "recipe" for the workflow, describing all the steps we have done by hand. (you can open the `.smk` file with a text editor and have a look).
+
+## Running the workflow
+
+We can do a last optional check if everything is fine and the workflow can be executed by performing a "dryrun" using the `--dryrun` parameter:
+
+``` bash
+snakemake \
+--snakefile \
+amplicon_workflow.smk \
+--directory {ourdir} \
+--configfile sample_config={config} \
+--cores {threads} \
+--dryrun
+```
+
+- `{outdir}`: This is the directory we have just created (e.g. `results`)
+- `{config}`: This is the config file we have created previously.
+
+If there are no errors we can execute the full workflow by excluding the `--dryrun` parameter:
+
+``` bash
+snakemake \
+--snakefile \
+amplicon_workflow.smk \
+--directory {ourdir} \
+--configfile sample_config={config} \
+--cores {threads}
+```
+
+::: {.callout-note}
+The workflow, with a single sample, should finish in a few minutes on your laptop!
+:::

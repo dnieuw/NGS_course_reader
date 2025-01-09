@@ -1,0 +1,40 @@
+# Metagenomic data analysis on the HPC
+
+## Connecting to a server
+
+Login to the HPC:
+
+``` bash
+ssh {username}@hpc.kcri.it -p 7076
+```
+
+- `{username}`: Your personal username, be aware, you also need to know your password.
+
+On the KCRI HPC we have prepared the same conda environment as we have used locally. So the same steps have to be done as in the previous chapter to analyze your data.
+
+A challenge is to transport the raw sequence data to the HPC. We can transfer data using the graphical user interface prepared by KCRI or by using the "+ Other Locations" button in the File browser of your UBUNTU laptop and filling in `sftp://{username}@hpc.kcri.it:7076`.
+
+Also make sure to copy the `sample_config.tsv` file to the server.
+
+::: {.callout-warning}
+Please wait for instructions on how to setup your environment and where to run your analysis!
+:::
+
+After setting everything up we can redo the analysis at the HPC:
+
+``` bash
+snakemake \
+--snakefile \
+viral_metagenome_workflow.smk \
+--directory {ourdir} \
+--configfile sample_config={config} host_reference=../GCF_000001405.26_GRCh38_genomic.fna.gz database=../ncbi_viral_complete_human.fasta taxdump=../new_taxdump.tar.gz \
+--cores {threads}
+```
+
+- `{outdir}`: This is the directory we have just created (e.g. `results`)
+- `{config}`: This is the config file we have created previously.
+
+::: {.callout-note}
+This concludes the second day of the GREAT-LIFE Data Analysis Workshop!
+:::
+

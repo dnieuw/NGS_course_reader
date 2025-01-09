@@ -1,0 +1,120 @@
+# Raw Data Quality Control
+
+::: {.callout-warning}
+# Important!
+
+In the next steps we are going to copy-paste code, adjust it to our needs, and execute it on the command-line. 
+
+__Please open a plain text editor to paste the code from the next steps, to keep track of your progress!__
+:::
+
+## Merging fastq files
+
+Any file in linux can be pasted to another file using the `cat` command. `zcat` in addition also unzips gzipped files (e.g. `.fastq.gz` extension). If your files are already unzipped, use `cat` instead.
+
+**Modify and run:**
+
+``` bash
+zcat {folder}/*.fastq.gz > {output}
+```
+
+- `{folder}` should contain all your `.fastq.gz` files for a single barcode.
+- `{output}` should be the name of the combined unzipped fastq file (e.g. `all_barcode01.fastq`).
+
+
+## Running fastp quality controlling software
+
+The [fastp](https://github.com/OpenGene/fastp) software is a very fast multipurpose quality control software to perform quality and sequence adapter trimming for Illumina short-read and Nanopore long-read data.
+
+Because we are processing Nanopore data several quality control options have to be disabled. The only requirement we set is a minimum median phred quality score of the read of 10 and a minimum length of around the size of the amplicon (e.g. 400 nucleotides).
+
+
+**Modify and run:**
+
+``` bash
+fastp -i {input} -o {output} -j /dev/null -h {report} \
+--disable_trim_poly_g \
+--disable_adapter_trimming \
+--qualified_quality_phred 10 \
+--unqualified_percent_limit 50 \
+--length_required {min_length} \
+-w {threads}
+```
+
+- `{input}` is the merged file from the previous section.
+- `{output}` is the the quality controlled `.fastq` filename (e.g. `all_barcode01_QC.fastq`).
+- `{report}` is the QC report filename, containing various details about the quality of the data before and after processing. 
+- `{min_length}` is the expected size of your amplicons, to remove very short "rubbish" reads, generally the advise is to set it a bit lower than the expected size. Based on the QC report, which lists the number of removed reads you may adjust this setting, if too many reads are removed.
+
+::: {.callout-note}
+`{threads}` is a recurring setting for the number of CPUs to use for the processing. On a laptop this will be less (e.g. 8), on an HPC you may be able to use 64 or more CPUs for processing. However, how much performance increase you get depends on the software.
+
+Since we are running this on a laptop, please set the threads to `18` for all the following sections.
+:::
+
+## Trimming primers irrespective of primer sequence
+
+::: {.callout-note}
+This is optional if primer sequences are not known.
+:::
+
+With amplicon-based sequencing in principle every read contains the sequences of the primers at the start and the end of the read. We can use [cutadapt](https://cutadapt.readthedocs.io) to trim the first and last 30 nucleotides (`-u 30 -u -30`) of every read to remove the primer sequence.
+
+``` bash
+cutadapt -u 30 -u -30 -o {output} {input} -j {threads}
+```
+
+- `{output}` is the filename of the primer trimmed fastq.
+- `{input}` is the fastq result of the previous QC step.
+
+## Mapping reads to primer reference
+
+To precisely trim the primers we map the reads to a reference sequence based on which the primers were designed. This is to make sure, when looking for the primer locations, all primer location can be found. To map the reads we use [minimap2](https://github.com/lh3/minimap2) with the `-x map-ont` option for ONT reads. `-Y` ensures reads are not hardclipped. Afterwards we use [samtools](https://www.htslib.org/) to reduce the `.bam` (mapping) file to only those reads that mapped to the reference and sort the reads in mapping file based on mapping position, which is necessary to continue working with the file.
+
+``` bash
+minimap2 -Y -t {threads} -x map-ont -a {reference} {input} | \
+samtools view -bF 4 - | samtools sort -@ {threads} - > {output}
+```
+
+- `{reference}` is the fasta file containing the reference that your primers should be able to map to.
+- `{input}` is either the trimmed fastq file from cutadapt, or the QC fastq file.
+- `{output}` is the mapping file, it could be named something like `barcode01_QCmapped.bam`
+
+## Trimming primers using Ampliclip
+
+[Ampliclip](https://github.com/dnieuw/Ampliclip) is a tool I wrote to remove the primer sequences of nanopore amplicon reads. It works by mapping the primer sequences to a reference genome to find their location. Then it clips the reads mapped to the same reference (which we did in the previous step) by finding overlap between the primer location and the read ends. It allows for some "junk" in front of the primer location with `--padding` and mismatches between primer and reference `--mismatch`. After clipping it trims the reads and outputs a clipped `.bam` file and a trimmed `.fastq` file. `--minlength` can be set to remove any reads that, after trimming, have become shorter than this length. Set this to the value that was used in the QC section (e.g. 400).
+
+After the trimming the clipped mapping file has to be sorted again.
+
+``` bash
+samtools index {input.mapped}
+
+ampliclip \
+--infile {input.mapped} \
+--outfile {output.clipped} \
+--outfastq {output.trimmed} \
+--primerfile {primers} \
+--referencefile {reference}\
+-fwd LEFT -rev RIGHT \
+--padding 10 --mismatch 2 --minlength {min_length}
+
+samtools sort {output.clipped}_ > {output.clipped}
+rm {output.clipped}_
+```
+
+- `{input.mapped}` is the mapping file created in the previous step
+- `{output.clipped}` is the mapping file processed to clip the primer sequences off (e.g. `barcode01_clipped.bam`).
+- `{output.trimmed}` is the trimmed fastq file, this contains all reads mapped to the reference with primer sequences trimmed off (e.g. `barcode01_trimmed.bam`).
+- `{primers}` is the name of the primer sequence fasta file. Make sure names of the primers have either 'LEFT' or 'RIGHT' in their name to specify if it is a left or right side primer.
+- `{reference}` is the name of the reference file, this must be the same file as was used for mapping in the previous step.
+- `{min_length}` is the minimum required length of the trimmed reads, set it to the same value as when using `fastp`.
+
+To see what has happened in the trimming process we can open the `.bam` mapping files before and after primer trimming using the visualization tool [UGENE](https://ugene.net/), a free and open source version of the software [geneious](https://www.geneious.com/).
+
+You can open UGENE by double-clicking `ugeneui` in the `/home/ugene-50.0/` folder on your laptop.
+
+In UGENE you can open a `.bam` via the "open file" option.
+
+::: {.callout-note}
+We now have our quality controlled sequence reads which we can use to create a consensus sequence in the next chapter.
+:::

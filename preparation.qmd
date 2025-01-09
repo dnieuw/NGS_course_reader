@@ -1,0 +1,25 @@
+# Preparation
+
+::: {.callout-warning}
+# Important!
+
+In the following sections whenever a **"parameter"** in brackets `{}` is shown, the intention is to fill in your own filename or value. Each parameter will be explained in the section in detail.
+:::
+
+::: {.callout-tip}
+Notice the small *"Copy to Clipboard"* button on the right hand side of each code chunk, this can be used to copy the code.
+:::
+
+## Activating the correct conda software environment
+
+We have prepared a software environment for you using the [anaconda](www.anaconda.org) software management tool. Using conda environments is highly recommended when installing bioinformatics software in linux as it manages all the dependencies of differenct softwares for you. 
+
+Activate the custom made `viroscience_env` by copying and executing the following code: 
+
+``` bash
+conda activate viroscience_env
+```
+
+::: {.callout-note}
+We are now ready to start executing the code to perform quality control of our raw Nanopore sequencing data in the next chapter.
+:::

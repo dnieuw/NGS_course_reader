@@ -1,0 +1,3 @@
+# Day 1: Amplicon Based Nanopore Sequencing {.unnumbered}
+
+Welcome to day 1 of the data analysis workshop!

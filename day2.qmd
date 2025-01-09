@@ -1,0 +1,3 @@
+# Day 2: Metagenomic Nanopore Sequencing {.unnumbered}
+
+Welcome to day 2 of the data analysis workshop!

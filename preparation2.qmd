@@ -1,0 +1,15 @@
+# Preparation
+
+::: {.callout-warning}
+# Important!
+
+Make sure you have activated the custom made `viroscience_env` again by copying and executing the following code:
+
+``` bash
+conda activate viroscience_env
+```
+:::
+
+::: {.callout-note}
+We are now ready to start executing the code to perform quality control of our raw Nanopore sequencing data in the next chapter.
+:::

@@ -1,0 +1,76 @@
+# Comparing sequence to reference sequences
+
+## Creating multiple sequence alignment
+
+We can use a command to past the consensus sequence we generated to a fasta file of reference sequences. Now is also a good time to open the tool alignement visualization tool [Aliview](https://ormbunkar.se/aliview/) and have a look at our sequence and the alignment.
+
+Please find the other mpox sequence `.fasta` files in the folder "sequences" and use the command below to add them them to the newly generated consensus `.fasta` file.
+
+``` bash
+cat {consensus} {reference} > consensus_with_ref.fasta
+```
+
+::: {.callout-tip}
+You can also use Aliview to copy and paste sequences if you prefer. However, adding together multiple single `.fasta` files can be cumbersome, so in that case `cat {file1}.fasta {file2}.fasta {file3}.fasta > all_consensus.fasta` or even better `cat *.fasta > all_consensus.fasta` can be very convenient to paste together many sequences in one file.
+:::
+
+We now have two options to create a multiple sequence alignment (MAF). (Not to be confused with a read alignment `.bam` file).
+
+The *first* option is to use a multiple sequence alignment tool such as [MAFFT](https://mafft.cbrc.jp/alignment/server/index.html) to create a multiple sequence alignment. This is a good option if the genome of your to-be-aligned virus is not very big (e.g. 20kb) and you do not have too many (e.g. 10,000+) genome to align.
+
+The *second* option is to use a reference based multiple sequence alignment approach, which we can do using `minimap2` and [gofasta]("https://github.com/virus-evolution/gofasta"). This is very fast and works well even for large genomes (e.g. 200kb+) or many sequences (10,000+). __However__, gofasta does not perform a "real" multiple alignment, because it ignores insertions in the sequences compared to the reference and removes them. Therefore if insertions are expected and present in the sequences, they will have to be added manually. On the positive side, phylogenetic analysis tools, such as the one we will use below, also ignore any insertions, so for the phylogenetic analysis the removal of insertions does not matter.
+
+Use one of the two options below to create the multiple sequence alignment:
+
+__Option 1:__
+
+``` bash
+mafft --auto --threads {threads} {input} > {output}
+```
+
+__Option 2:__
+
+``` bash
+minimap2 -t {threads} -a \
+-x asm20 \
+--sam-hit-only \
+--secondary=no \
+--score-N=0 \
+{reference} \
+{input} \
+-o tmp.sam
+
+gofasta sam toMultiAlign \
+-s tmp.sam \
+-o {output}
+```
+
+- `{input}` here is the `.fasta` file containing all consensus sequences and references you would like to align.
+- `{output}` is the name of the aligned fasta file (e.g. `consensus_with_ref_aligned.fasta`). 
+- `{reference}` is the reference used to performe a reference based multiple alignment, use the same reference as we used for read mapping before.
+
+(`tmp.sam` can be deleted)
+
+::: {.callout-tip}
+Any of `.fasta` files can be viewed using Aliview to see how the sequences or the alignment looks.
+:::
+
+## Running IQTREE2 maximum likelyhood tree software
+
+We can fill a complete course to explain phylogenetic analysis, therefore, here we will just run an maximum likelihood (ML) phylogenetic tree software with our created alignment and look at the result.
+
+The software [iq-tree](http://www.iqtree.org/) is a very powerful tool for phylogenetic analysis. We can simply input our multiple sequence alignment and let iq-tree determine the ML model automatically using "model-finder" and perform 1000 fast bootstraps (`-B 1000`) to get a phylogenetic tree as an output. `-czb` (meaning "collapse zero branches") will make a tree with many identical sequences more readable by removing/collapsing artificial splits between identical sequences.  
+
+``` bash
+iqtree -s {input} -B 1000 -nt {threads} -czb
+```
+
+- `{input}` is the multiple sequence alignment file we made in the previous step. The output will be named based on the name of the input file automatically.
+
+After iqtree has finished, it produces a file ending in `.treefile`. This is a "nexus" format phylogenetic tree file which can be opened and visualized using (among others) the tool [figtree](http://tree.bio.ed.ac.uk/software/figtree/). This tool allows for zooming in, editing, and annotating phylogenetic trees.
+
+::: {.callout-note}
+Please open Figtree, load your phylogenetic tree file, and look at your hard work of today :-)!
+:::
+
+

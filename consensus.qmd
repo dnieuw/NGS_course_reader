@@ -1,0 +1,53 @@
+# Generating a Consensus Sequence
+
+## Mapping trimmed reads to reference
+
+::: {.callout-note}
+This is optional if the reference for the primer design and the preferred reference for consensus generation are different. Otherwise simply use the clipped mapping file from the previous step.
+:::
+
+Similar to what we did before we now map the trimmed reads to our preferred reference genome.
+
+``` bash
+minimap2 -Y -t {threads} -x map-ont -a {reference} {input} | \
+samtools view -bF 4 - | samtools sort -@ {threads} - > {output}
+```
+
+- `{reference}` is the fasta file containing the preferred reference.
+- `{input}` is the trimmed fastq file from the previous step.
+- `{output}` is the mapping file, it could be named something like `barcode01_mapped.bam`
+
+## Creating consensus from filtered mutations
+
+[Virconsens](https://github.com/dnieuw/Virconsens) is a tool I wrote to create a consensus sequence from Nanopore amplicon reads mapped to a reference in a mapping `.bam` file. 
+
+It works by reading the mapping file position-by-position and counting the mutations, insertions and deletions. The mutation or deletion (or original nucleotide from the reference) with the highest count is considered the "consensus" at that position. 
+
+In the next step it filters positions with too low coverage based on the `mindepth` threshold or too low frequency based on the `minAF` threshold.
+
+The last step of the tool is to iterate over the reference genome and replace the reference nucleotide with the mutation, insertion or deletion, replace filtered position with "N", or keep the original reference nucleotide. (1 and 2 nucleotide indels are ignored as they are very often erroneous).
+
+Before running virconsens we have to index the `.bam` mapping file.
+
+``` bash
+samtools index {input}
+
+virconsens \
+-b {input} \
+-o {output} \
+-n {name} \
+-r {reference} \
+-d 30 \
+-af 0.1 \
+-c {threads}
+```
+
+- `{input}` is the mapping bam file from the previous step.
+- `{output}` is the fasta file containing the consensus sequence (e.g. `barcode01_consensus.fasta`)
+- `{name}` is the custom name of your sequence that will be used in the fasta file (e.g. `barcode01_consensus`)
+- `{reference}` is the fasta file containing the preferred reference, the same as in the previous step.
+
+::: {.callout-note}
+We now have a consensus sequence of our sequencing result. This is the "raw" result we can continue using for multiple sequence alignment and phylogeny in the next chapter.
+:::
+

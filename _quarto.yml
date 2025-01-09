@@ -1,0 +1,39 @@
+project:
+  type: book
+
+book:
+  title: "Data Analysis Workshop GREAT-LIFE"
+  author: "David F. Nieuwenhuijse"
+  date: "10-01-2024"
+  chapters:
+    - part: index.qmd
+      chapters: 
+        - preparation.qmd
+        - dataQC.qmd
+        - consensus.qmd
+        - interpretation.qmd
+        - automation.qmd
+        - amplicon_hpc.qmd
+    - part: day2.qmd
+      chapters:
+        - preparation2.qmd
+        - dataQC2.qmd
+        - assembly_annotation.qmd
+        - automation2.qmd
+        - metagenome_hpc.qmd
+
+toc: true
+number-sections: true
+number-depth: 3
+
+format:
+  html:
+    embed-resources: false
+    theme:
+      light: flatly
+      dark: darkly
+  pdf:
+    documentclass: scrreprt
+
+
+
