@@ -8,7 +8,7 @@ To automate the analysis we have developed a [Snakemake](https://snakemake.readt
 
 ## Preparing to run the workflow
 
-The workflow takes an input "sample_config" tabular file and based on this file it will process all samples in parallel and automatically.
+The workflow takes an input "sample_data" tabular file and based on this file it will process all samples in parallel and automatically.
 
 The tabular config file has the following structure:
 
@@ -52,14 +52,14 @@ Then create the new directory using the `mkdir` command:
 mkdir results
 ```
 
-This creates a new directory at the current location. Move the `sample_config.tsv` file to the results directory using the `mv` (move) command:
+This creates a new directory at the current location. Move the `sample_data.tsv` file to the results directory using the `mv` (move) command:
 
 ``` bash
-mv sample_config.tsv results
+mv sample_data.tsv results
 ```
 
 ::: {.callout-tip}
-If you get a "file not found" error after changing your directory (`cd`) you may need to write the complete path of your sample_config.tsv file e.g `mv /home/david/Documents/sample_config.tsv results`
+If you get a "file not found" error after changing your directory (`cd`) you may need to write the complete path of your sample_data.tsv file e.g `mv /home/david/Documents/sample_data.tsv results`
 :::
 
 After preparing the results directory we have to make sure that we have activated the `viroscience_env` conda environment and check if the command line has `(viroscience_env)` in front.
@@ -75,13 +75,13 @@ snakemake \
 --snakefile \
 amplicon_workflow.smk \
 --directory {ourdir} \
---configfile sample_config={config} \
+--config sample_config={config} \
 --cores {threads} \
 --dryrun
 ```
 
 - `{outdir}`: This is the directory we have just created (e.g. `results`)
-- `{config}`: This is the config file we have created previously.
+- `{config}`: This is the `.tsv` file we have created previously.
 
 If there are no errors we can execute the full workflow by excluding the `--dryrun` parameter:
 
@@ -90,7 +90,7 @@ snakemake \
 --snakefile \
 amplicon_workflow.smk \
 --directory {ourdir} \
---configfile sample_config={config} \
+--config sample_config={config} \
 --cores {threads}
 ```
 

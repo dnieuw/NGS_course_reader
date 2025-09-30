@@ -1,12 +1,35 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Data Analysis Workshop GREAT-LIFE",
+    "objectID": "automation.html",
+    "href": "automation.html",
+    "title": "5  Automating data analysis",
     "section": "",
-    "text": "Day 1: Amplicon Based Nanopore Sequencing\nWelcome to day 1 of the data analysis workshop!",
+    "text": "5.1 Running the automated Nanopore amplicon analysis workflow\nUntil now we have manually ran analysis tools by copying and pasting code step-by-step. This is a great exercise to get a in-depth understanding of how the raw data is processed and how the consensus sequence of a amplicon dataset is generated. However to analyse multiple or many samples at the same time it is cumbersome to do it in this manner.\nTo automate the analysis we have developed a Snakemake workflow which runs all the steps we have manually done before in an automated way and in parallel for all samples we provide.",
     "crumbs": [
-      "Day 1: Amplicon Based Nanopore Sequencing"
+      "Day 1: Amplicon Based Nanopore Sequencing",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Automating data analysis</span>"
+    ]
+  },
+  {
+    "objectID": "automation.html#preparing-to-run-the-workflow",
+    "href": "automation.html#preparing-to-run-the-workflow",
+    "title": "5  Automating data analysis",
+    "section": "5.2 Preparing to run the workflow",
+    "text": "5.2 Preparing to run the workflow\nThe workflow takes an input “sample_data” tabular file and based on this file it will process all samples in parallel and automatically.\nThe tabular config file has the following structure:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nUniqueID\nFASTQ_path\nReference\nprimers\nPrimer_reference\nSequence_name\ngzipped\ncoverage\nmin_length\n\n\n\n\nBC01\nbarcode01\nNC_003310.fasta\nlong_amplicon_primers.fasta\nNC_063383.1.fasta\nconsensus_barcode01\nTRUE\n30\n1000\n\n\nBC02\nbarcode02\nNC_003310.fasta\nlong_amplicon_primers.fasta\nNC_063383.1.fasta\nconsensus_barcode02\nTRUE\n30\n1000\n\n\n\n\n\n\n\n\n\nAttention!\n\n\n\nMake sure that the first line contains the exact headers as shown in the table above, you can find an example file in the course material.\n\n\n\nUniqueID: This is the unique name used in the workflow to keep track of your sample while processing, please use a simple and unique name (e.g. BC01, etc.)\nFASTQ_path: This is the folder location of all raw .fastq.gz file for a single sample, no need to use cat to paste them together.\nReference: This is the location of the reference sequence .fasta file used for the consensus generation.\nprimers: This is the location of the file containing the primer sequences.\nPrimer_reference: This is the location of the reference sequence .fasta file used for primer trimming.\nSequence_name: This is the name given to the consensus sequence at the end of the pipeline.\ngzipped: Not used yet in the current version of the workflow.\ncoverage: This is the minimum coverage required, anything lower than 30 is not recommended, for low accuracy basecalling, higher coverage is recommended.\nmin_length: This is the minimum length required for the reads to be accepted. This must be below the expected size of the amplicon, for example, for the 2500nt mpox amplicon we use a threshold of 1000.\n\nAfter filling out the tablular file, we can create a directory (folder) for the results with the following process.\nFirst check your current directory with the pwd command:\npwd\nChange your current directory using cd if needed:\ncd /{folder1}/{folder2}\nThen create the new directory using the mkdir command:\nmkdir results\nThis creates a new directory at the current location. Move the sample_data.tsv file to the results directory using the mv (move) command:\nmv sample_data.tsv results\n\n\n\n\n\n\nTip\n\n\n\nIf you get a “file not found” error after changing your directory (cd) you may need to write the complete path of your sample_data.tsv file e.g mv /home/david/Documents/sample_data.tsv results\n\n\nAfter preparing the results directory we have to make sure that we have activated the viroscience_env conda environment and check if the command line has (viroscience_env) in front.\nNext, run the ls command to list the files in the current directory and check if the amplicon_workflow.smk file is present. This is the “recipe” for the workflow, describing all the steps we have done by hand. (you can open the .smk file with a text editor and have a look).",
+    "crumbs": [
+      "Day 1: Amplicon Based Nanopore Sequencing",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Automating data analysis</span>"
+    ]
+  },
+  {
+    "objectID": "automation.html#running-the-workflow",
+    "href": "automation.html#running-the-workflow",
+    "title": "5  Automating data analysis",
+    "section": "5.3 Running the workflow",
+    "text": "5.3 Running the workflow\nWe can do a last optional check if everything is fine and the workflow can be executed by performing a “dryrun” using the --dryrun parameter:\nsnakemake \\\n--snakefile \\\namplicon_workflow.smk \\\n--directory {ourdir} \\\n--config sample_config={config} \\\n--cores {threads} \\\n--dryrun\n\n{outdir}: This is the directory we have just created (e.g. results)\n{config}: This is the .tsv file we have created previously.\n\nIf there are no errors we can execute the full workflow by excluding the --dryrun parameter:\nsnakemake \\\n--snakefile \\\namplicon_workflow.smk \\\n--directory {ourdir} \\\n--config sample_config={config} \\\n--cores {threads}\n\n\n\n\n\n\nNote\n\n\n\nThe workflow, with a single sample, should finish in a few minutes on your laptop!",
+    "crumbs": [
+      "Day 1: Amplicon Based Nanopore Sequencing",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Automating data analysis</span>"
     ]
   },
   {
@@ -164,39 +187,6 @@
     ]
   },
   {
-    "objectID": "automation.html",
-    "href": "automation.html",
-    "title": "5  Automating data analysis",
-    "section": "",
-    "text": "5.1 Running the automated Nanopore amplicon analysis workflow\nUntil now we have manually ran analysis tools by copying and pasting code step-by-step. This is a great exercise to get a in-depth understanding of how the raw data is processed and how the consensus sequence of a amplicon dataset is generated. However to analyse multiple or many samples at the same time it is cumbersome to do it in this manner.\nTo automate the analysis we have developed a Snakemake workflow which runs all the steps we have manually done before in an automated way and in parallel for all samples we provide.",
-    "crumbs": [
-      "Day 1: Amplicon Based Nanopore Sequencing",
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Automating data analysis</span>"
-    ]
-  },
-  {
-    "objectID": "automation.html#preparing-to-run-the-workflow",
-    "href": "automation.html#preparing-to-run-the-workflow",
-    "title": "5  Automating data analysis",
-    "section": "5.2 Preparing to run the workflow",
-    "text": "5.2 Preparing to run the workflow\nThe workflow takes an input “sample_config” tabular file and based on this file it will process all samples in parallel and automatically.\nThe tabular config file has the following structure:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nUniqueID\nFASTQ_path\nReference\nprimers\nPrimer_reference\nSequence_name\ngzipped\ncoverage\nmin_length\n\n\n\n\nBC01\nbarcode01\nNC_003310.fasta\nlong_amplicon_primers.fasta\nNC_063383.1.fasta\nconsensus_barcode01\nTRUE\n30\n1000\n\n\nBC02\nbarcode02\nNC_003310.fasta\nlong_amplicon_primers.fasta\nNC_063383.1.fasta\nconsensus_barcode02\nTRUE\n30\n1000\n\n\n\n\n\n\n\n\n\nAttention!\n\n\n\nMake sure that the first line contains the exact headers as shown in the table above, you can find an example file in the course material.\n\n\n\nUniqueID: This is the unique name used in the workflow to keep track of your sample while processing, please use a simple and unique name (e.g. BC01, etc.)\nFASTQ_path: This is the folder location of all raw .fastq.gz file for a single sample, no need to use cat to paste them together.\nReference: This is the location of the reference sequence .fasta file used for the consensus generation.\nprimers: This is the location of the file containing the primer sequences.\nPrimer_reference: This is the location of the reference sequence .fasta file used for primer trimming.\nSequence_name: This is the name given to the consensus sequence at the end of the pipeline.\ngzipped: Not used yet in the current version of the workflow.\ncoverage: This is the minimum coverage required, anything lower than 30 is not recommended, for low accuracy basecalling, higher coverage is recommended.\nmin_length: This is the minimum length required for the reads to be accepted. This must be below the expected size of the amplicon, for example, for the 2500nt mpox amplicon we use a threshold of 1000.\n\nAfter filling out the tablular file, we can create a directory (folder) for the results with the following process.\nFirst check your current directory with the pwd command:\npwd\nChange your current directory using cd if needed:\ncd /{folder1}/{folder2}\nThen create the new directory using the mkdir command:\nmkdir results\nThis creates a new directory at the current location. Move the sample_config.tsv file to the results directory using the mv (move) command:\nmv sample_config.tsv results\n\n\n\n\n\n\nTip\n\n\n\nIf you get a “file not found” error after changing your directory (cd) you may need to write the complete path of your sample_config.tsv file e.g mv /home/david/Documents/sample_config.tsv results\n\n\nAfter preparing the results directory we have to make sure that we have activated the viroscience_env conda environment and check if the command line has (viroscience_env) in front.\nNext, run the ls command to list the files in the current directory and check if the amplicon_workflow.smk file is present. This is the “recipe” for the workflow, describing all the steps we have done by hand. (you can open the .smk file with a text editor and have a look).",
-    "crumbs": [
-      "Day 1: Amplicon Based Nanopore Sequencing",
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Automating data analysis</span>"
-    ]
-  },
-  {
-    "objectID": "automation.html#running-the-workflow",
-    "href": "automation.html#running-the-workflow",
-    "title": "5  Automating data analysis",
-    "section": "5.3 Running the workflow",
-    "text": "5.3 Running the workflow\nWe can do a last optional check if everything is fine and the workflow can be executed by performing a “dryrun” using the --dryrun parameter:\nsnakemake \\\n--snakefile \\\namplicon_workflow.smk \\\n--directory {ourdir} \\\n--configfile sample_config={config} \\\n--cores {threads} \\\n--dryrun\n\n{outdir}: This is the directory we have just created (e.g. results)\n{config}: This is the config file we have created previously.\n\nIf there are no errors we can execute the full workflow by excluding the --dryrun parameter:\nsnakemake \\\n--snakefile \\\namplicon_workflow.smk \\\n--directory {ourdir} \\\n--configfile sample_config={config} \\\n--cores {threads}\n\n\n\n\n\n\nNote\n\n\n\nThe workflow, with a single sample, should finish in a few minutes on your laptop!",
-    "crumbs": [
-      "Day 1: Amplicon Based Nanopore Sequencing",
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Automating data analysis</span>"
-    ]
-  },
-  {
     "objectID": "amplicon_hpc.html",
     "href": "amplicon_hpc.html",
     "title": "6  Amplicon data analysis on the HPC",
@@ -216,16 +206,6 @@
     "crumbs": [
       "Day 1: Amplicon Based Nanopore Sequencing",
       "<span class='chapter-number'>6</span>  <span class='chapter-title'>Amplicon data analysis on the HPC</span>"
-    ]
-  },
-  {
-    "objectID": "day2.html",
-    "href": "day2.html",
-    "title": "Day 2: Metagenomic Nanopore Sequencing",
-    "section": "",
-    "text": "Welcome to day 2 of the data analysis workshop!",
-    "crumbs": [
-      "Day 2: Metagenomic Nanopore Sequencing"
     ]
   },
   {
@@ -391,6 +371,16 @@
     "crumbs": [
       "Day 2: Metagenomic Nanopore Sequencing",
       "<span class='chapter-number'>11</span>  <span class='chapter-title'>Metagenomic data analysis on the HPC</span>"
+    ]
+  },
+  {
+    "objectID": "day2.html",
+    "href": "day2.html",
+    "title": "Day 2: Metagenomic Nanopore Sequencing",
+    "section": "",
+    "text": "Welcome to day 2 of the data analysis workshop!",
+    "crumbs": [
+      "Day 2: Metagenomic Nanopore Sequencing"
     ]
   }
 ]
